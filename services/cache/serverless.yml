@@ -4,7 +4,7 @@ provider:
   name: aws
   stage: production
 
-deploymentBucket: remotepixel-${self:provider.region}
+deploymentBucket: cogeo-watchbot-${self:provider.region}
 
 resources:
     Resources:

@@ -1,8 +1,29 @@
 # cogeo-watchbot
 
-Convert file to COGs and create mosaic
+Convert file to COGs and create mosaic at scale using AWS Lambda
 
 # What is this
+
+This repo host the code for a serverless architecture enabling creation of Cloud Optimized GeoTIFF and [Mosaic-JSON](https://github.com/developmentseed/mosaicjson-spec) at scale using a [`map-reduce`](https://en.wikipedia.org/wiki/MapReduce) like model.
+
+#### Map-Reduce events
+
+1. Start job (distribute tasks)
+2. Run processing task in parallel (e.g COG creation)
+3. Run a summary task (e.g. Create mosaic-json)
+
+
+Note: This work was inspired by the awesome [ecs-watchbot](https://github.com/mapbox/ecs-watchbot).
+
+
+## Architecture
+
+![](https://user-images.githubusercontent.com/10407788/64704939-18961400-d47d-11e9-9a67-ae6bbbdfa7cd.png)
+
+### Serverless ? 
+
+Not really. To be able to run a `map-reduce` like model we need a fast and reliable database to store the `job` status.
+We use AWS ElastiCache Redis this part thus the stack is not fully serverless.
 
 
 # Deploy
@@ -37,4 +58,44 @@ $ make build
 
 ```bash
 $ sls deploy --stage production
+```
+
+
+# How To
+
+
+### Example
+
+1. Get a list of files you want to convert
+```$
+$ aws s3 ls s3://spacenet-dataset/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS-RGB/ --recursive | awk '{print "https://spacenet-dataset.s3.amazonaws.com/"$NF}' > list_moscow.txt
+```
+Note: we use `https://spacenet-dataset.s3.amazonaws.com` prefix because we don't want to add IAM role for this bucket
+
+
+2. Create YML definition (Optional)
+
+```yaml
+sources:
+  - https://spacenet-dataset.s3.amazonaws.com/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS-RGB/SN5_roads_test_public_AOI_7_Moscow_PS-RGB_chip0.tif
+  - https://spacenet-dataset.s3.amazonaws.com/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS-RGB/SN5_roads_test_public_AOI_7_Moscow_PS-RGB_chip1.tif
+  ...
+profile_name: "jpeg" # <-- rio-cogeo profile name
+profile_options: # <-- rio-cogeo profile options
+  blockxsize: 256
+  blockysize: 256
+options: # <-- rio-cogeo.cog_translate options
+  add_mask: "true"
+```
+
+3. Convert to JSON
+
+```bash
+$ yaml2json spacenet_moscow.yml > spacenet_moscow.json
+```
+
+4. upload to S3 and start processing
+
+```
+$ aws s3 cp spacenet_moscow.json s3://cogeo-watchbot-us-east-1/jobs/spacenet_moscow.json
 ```
