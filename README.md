@@ -45,7 +45,7 @@ $ npm install serverless -g
 
 ```bash
 $ cd services/redis
-$ sls deploy
+$ sls deploy --region us-east-1
 ```
 
 3. Create Lambda package
@@ -54,15 +54,22 @@ $ sls deploy
 $ make build
 ```
 
-4. Deploy
+4. Create Bucket (optional)
+
+We need to create a bucket to store the COGs and mosaic-json. The bucket must be created before the lambda deploy.
 
 ```bash
-$ sls deploy --stage production
+$ aws s3api create-bucket --bucket my-bucket --region us-east-1
+```
+
+5. Deploy the Watchbot Serverless stack
+
+```bash
+$ sls deploy --stage production --bucket my-bucket --region us-east-1
 ```
 
 
 # How To
-
 
 ### Example
 
@@ -97,5 +104,5 @@ $ yaml2json spacenet_moscow.yml > spacenet_moscow.json
 4. upload to S3 and start processing
 
 ```
-$ aws s3 cp spacenet_moscow.json s3://cogeo-watchbot-us-east-1/jobs/spacenet_moscow.json
+$ aws s3 cp spacenet_moscow.json s3://my-bucket/jobs/spacenet_moscow.json
 ```

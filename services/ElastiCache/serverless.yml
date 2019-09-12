@@ -1,10 +1,9 @@
-service: redis-cache
+service: redis-db
 
 provider:
   name: aws
-  stage: production
-
-deploymentBucket: cogeo-watchbot-${self:provider.region}
+  stage: ${opt:stage, 'production'}
+  region: ${opt:region, 'us-east-1'}
 
 resources:
     Resources:

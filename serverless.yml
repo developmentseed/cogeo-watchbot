@@ -3,8 +3,9 @@ service: cogeo-watchbot
 provider:
   name: aws
   runtime: python3.7
-  stage: production
-  
+  stage: ${opt:stage, 'production'}
+  region: ${opt:region, 'us-east-1'}
+
   apiGateway:
     minimumCompressionSize: 0
     binaryMediaTypes:
@@ -15,18 +16,19 @@ provider:
      Action:
        - "*"
      Resource:
-       - "arn:aws:s3:::cogeo-watchbot-${self:provider.region}*"
+       - "arn:aws:s3:::${opt:bucket}*"
 
   -  Effect: "Allow"
      Action:
        - "sns:Publish"
      Resource:
        - !Ref WatchbotTopic
+       - !Ref WatchbotDLQTopic
 
 package:
   artifact: package.zip
 
-deploymentBucket: cogeo-watchbot-${self:provider.region}
+deploymentBucket: ${opt:bucket}
 
 functions:
   watchbot:
@@ -35,9 +37,9 @@ functions:
     timeout: 900
     vpc:
       securityGroupIds:
-        - ${cf:redis-cache-production.securityGroupIdsOutput}
+        - ${cf:redis-db-production.securityGroupIdsOutput}
       subnetIds:
-        - ${cf:redis-cache-production.subnetIdsOutput}
+        - ${cf:redis-db-production.subnetIdsOutput}
     ReservedConcurrentExecutions: 1000
     environment:
       CPL_TMPDIR: /tmp
@@ -49,14 +51,15 @@ functions:
       GDAL_HTTP_MULTIPLEX: YES
       GDAL_HTTP_VERSION: 2
       MAX_THREADS: 50
-      MOSAIC_BUCKET: cogeo-watchbot-${self:provider.region}
+      MOSAIC_BUCKET: ${opt:bucket}
       PROJ_LIB: /var/task/share/proj
       PYTHONWARNINGS: ignore
-      REDIS_DB_HOST: ${cf:redis-cache-production.RedisHost}
-      REDIS_DB_PORT: ${cf:redis-cache-production.RedisPort}
+      REDIS_DB_HOST: ${cf:redis-db-production.RedisHost}
+      REDIS_DB_PORT: ${cf:redis-db-production.RedisPort}
       SNS_TOPIC: !Ref WatchbotTopic
       VSI_CACHE: TRUE
       VSI_CACHE_SIZE: 536870912
+    onError: !Ref WatchbotDLQTopic
     events:
       - sqs:
           arn: !GetAtt
@@ -64,7 +67,7 @@ functions:
             - Arn
           batchSize: 1
       - s3:
-          bucket: cogeo-watchbot-${self:provider.region}
+          bucket: ${opt:bucket}
           event: s3:ObjectCreated:*
           rules:
             - prefix: jobs/
@@ -101,7 +104,7 @@ functions:
       GDAL_HTTP_MULTIPLEX: YES
       GDAL_HTTP_VERSION: 2
       MAX_THREADS: 50
-      MOSAIC_DEF_BUCKET: cogeo-watchbot-${self:provider.region}
+      MOSAIC_DEF_BUCKET: ${opt:bucket}
       PROJ_LIB: /var/task/share/proj
       PYTHONWARNINGS: ignore
       VSI_CACHE: TRUE
@@ -126,7 +129,7 @@ functions:
       GDAL_HTTP_MULTIPLEX: YES
       GDAL_HTTP_VERSION: 2
       MAX_THREADS: 50
-      MOSAIC_DEF_BUCKET: cogeo-watchbot-${self:provider.region}
+      MOSAIC_DEF_BUCKET: ${opt:bucket}
       PROJ_LIB: /var/task/share/proj
       PYTHONWARNINGS: ignore
       VSI_CACHE: TRUE
@@ -157,12 +160,6 @@ resources:
             - WatchbotDeadLetterQueue
             - Arn
           maxReceiveCount: 3
-
-    # Create our Dead Letter SQS
-    WatchbotDeadLetterQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${self:provider.stage}-WatchbotDeadLetterQueue
 
     # Create SQS Queue Policies
     snsWatchbotQueuePolicy:
@@ -195,9 +192,57 @@ resources:
         Protocol: sqs
         RawMessageDelivery: 'false'
 
+    WatchbotDLQTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${self:provider.stage}-WatchbotDLQTopic
+
+    # Create our Dead Letter SQS
+    WatchbotDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-WatchbotDeadLetterQueue
+
+    # Create SQS Queue Policies
+    snsWatchbotDLQPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "allow-sns-messages"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - WatchbotDeadLetterQueue
+                - Arn
+              Action: "SQS:SendMessage"
+              Condition:
+                ArnEquals:
+                  "aws:SourceArn": !Ref WatchbotDLQTopic
+        Queues:
+          - Ref: WatchbotDeadLetterQueue
+
+    # Create the subscription to the 'WatchbotQueue'
+    WatchbotDLQSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        TopicArn: !Ref WatchbotDLQTopic
+        Endpoint: !GetAtt
+          - WatchbotDeadLetterQueue
+          - Arn
+        Protocol: sqs
+        RawMessageDelivery: 'false'
+
 Outputs:
   WatchbotTopic:
     Value:
       "Ref": WatchbotTopic
     Export:
       Name: WatchbotTopic
+
+  WatchbotDLQTopic:
+    Value:
+      "Ref": WatchbotDLQTopic
+    Export:
+      Name: WatchbotDLQTopic
