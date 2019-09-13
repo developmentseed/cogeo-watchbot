@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "name": "Watchbot specification",
+	"type": "object",
+	"properties": {
+		"sources": {
+            "description": "List of files to convert to COG",
+			"type": "array"
+        },
+        "profile_name": {
+            "description": "rio-cogeo profile name",
+            "type": "string",
+            "enum": ["jpeg", "webp", "zstd", "lzw", "deflate", "packbits", "raw"]
+        },
+        "profile_options": {
+            "description": "Dictionary of options to extend the cog profile",
+            "type": "object"
+        },
+        "options": {
+            "description": "Dictionary of options to pass to rio_cogeo.cogeo.cog_translate function",
+            "type": "object"  
+        },
+        "mosaicid": {
+            "description": "A mosaic id where to happend new data",
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{56}$"
+        },
+        "copy_valid_cog": {
+            "description": "Boolean indicating to copy COG if they are valid",
+            "type": "boolean"
+        }
+	},
+	"required": [
+		"sources"
+	]
+}

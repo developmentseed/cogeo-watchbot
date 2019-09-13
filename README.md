@@ -79,26 +79,23 @@ $ aws s3 ls s3://spacenet-dataset/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS
 ```
 Note: we use `https://spacenet-dataset.s3.amazonaws.com` prefix because we don't want to add IAM role for this bucket
 
-
-2. Create YML definition (Optional)
-
-```yaml
-sources:
-  - https://spacenet-dataset.s3.amazonaws.com/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS-RGB/SN5_roads_test_public_AOI_7_Moscow_PS-RGB_chip0.tif
-  - https://spacenet-dataset.s3.amazonaws.com/spacenet/SN5_roads/test_public/AOI_7_Moscow/PS-RGB/SN5_roads_test_public_AOI_7_Moscow_PS-RGB_chip1.tif
-  ...
-profile_name: "jpeg" # <-- rio-cogeo profile name
-profile_options: # <-- rio-cogeo profile options
-  blockxsize: 256
-  blockysize: 256
-options: # <-- rio-cogeo.cog_translate options
-  add_mask: "true"
-```
-
-3. Convert to JSON
+2. Use scripts/create_job.py
 
 ```bash
-$ yaml2json spacenet_moscow.yml > spacenet_moscow.json
+$ pip install rio-cogeo
+$ cd scripts/
+$ cat ../list_moscow.txt | python -m create_job - \
+   -p webp \
+   --co blockxsize=256 \
+   --co blockysize=256 \
+   --op overview_level=6 \
+   --op overview_resampling=bilinear > test.json
+```
+
+3. Validate JSON (Optional)
+
+```bash
+$ jsonschema -i test.json schema.json
 ```
 
 4. upload to S3 and start processing
