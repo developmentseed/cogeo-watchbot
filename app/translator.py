@@ -39,7 +39,9 @@ def _translate(src_path, dst_path, profile="webp", profile_options={}, **options
     output_profile.update(profile_options)
 
     config = dict(
-        NUM_THREADS="4", GDAL_TIFF_INTERNAL_MASK=True, GDAL_TIFF_OVR_BLOCKSIZE="128"
+        GDAL_NUM_THREADS="ALL_CPUS",
+        GDAL_TIFF_INTERNAL_MASK=True,
+        GDAL_TIFF_OVR_BLOCKSIZE="128",
     )
 
     cog_translate(
