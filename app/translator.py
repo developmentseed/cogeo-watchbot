@@ -51,6 +51,7 @@ def _translate(src_path, dst_path, profile="webp", profile_options={}, **options
         config=config,
         in_memory=False,
         quiet=True,
+        allow_intermediate_compression=True,
         **options,
     )
     return True
@@ -69,12 +70,13 @@ def process(
     url_info = urlparse(url.strip())
     src_path = "/tmp/" + os.path.basename(url_info.path)
 
+    if url_info.scheme not in ["http", "https", "s3"]:
+        raise Exception(f"Unsuported scheme {url_info.scheme}")
+
     if url_info.scheme.startswith("http"):
         wget.download(url, src_path)
     elif url_info.scheme == "s3":
         _s3_download(url, src_path)
-    else:
-        raise Exception(f"Unsuported scheme {url_info.scheme}")
 
     uid = str(uuid.uuid4())
     dst_path = f"/tmp/{uid}.tif"

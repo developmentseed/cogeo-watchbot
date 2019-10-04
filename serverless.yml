@@ -5,6 +5,7 @@ provider:
   runtime: python3.7
   stage: ${opt:stage, 'production'}
   region: ${opt:region, 'us-east-1'}
+  deploymentBucket: ${opt:bucket}
 
   apiGateway:
     minimumCompressionSize: 0
@@ -27,8 +28,6 @@ provider:
 
 package:
   artifact: package.zip
-
-deploymentBucket: ${opt:bucket}
 
 functions:
   watchbot:
@@ -234,15 +233,15 @@ resources:
         Protocol: sqs
         RawMessageDelivery: 'false'
 
-Outputs:
-  WatchbotTopic:
-    Value:
-      "Ref": WatchbotTopic
-    Export:
-      Name: WatchbotTopic
+  Outputs:
+    WatchbotTopic:
+      Value:
+        "Ref": WatchbotTopic
+      Export:
+        Name: WatchbotTopic
 
-  WatchbotDLQTopic:
-    Value:
-      "Ref": WatchbotDLQTopic
-    Export:
-      Name: WatchbotDLQTopic
+    WatchbotDLQTopic:
+      Value:
+        "Ref": WatchbotDLQTopic
+      Export:
+        Name: WatchbotDLQTopic

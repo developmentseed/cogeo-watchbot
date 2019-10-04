@@ -25,7 +25,9 @@ RUN rm -rdf $PACKAGE_PREFIX/boto3/ \
   && rm -rdf $PACKAGE_PREFIX/dateutil/ \
   && rm -rdf $PACKAGE_PREFIX/jmespath/ \
   && rm -rdf $PACKAGE_PREFIX/s3transfer/ \
-  && rm -rdf $PACKAGE_PREFIX/numpy/doc/
+  && rm -rdf $PACKAGE_PREFIX/numpy/doc/ \
+  && rm -rdf $PREFIX/share/doc \
+  && rm -rdf $PREFIX/share/man
 
 # Leave module precompiles for faster Lambda startup
 RUN find $PACKAGE_PREFIX -type f -name '*.pyc' | while read f; do n=$(echo $f | sed 's/__pycache__\///' | sed 's/.cpython-[2-3][0-9]//'); cp $f $n; done;

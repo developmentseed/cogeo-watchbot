@@ -40,8 +40,7 @@ We use AWS ElastiCache Redis this part thus the stack is not fully serverless.
 $ npm install serverless -g 
 ```
 
-
-2. Create S3 Bucket, VPC and Redis Database
+2. Create VPC and Redis Database
 
 ```bash
 $ cd services/redis

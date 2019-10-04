@@ -7,7 +7,7 @@ with open("README.md") as f:
 
 inst_reqs = [
     # "git+https://github.com/developmentseed/cogeo-mosaic",
-    "rio-cogeo",
+    "rio-cogeo>=1.1.5",
     "rasterio[s3]>=1.0.26",
     "watchbot_progress",
     "wget"
