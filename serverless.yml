@@ -39,7 +39,7 @@ functions:
         - ${cf:redis-db-production.securityGroupIdsOutput}
       subnetIds:
         - ${cf:redis-db-production.subnetIdsOutput}
-    ReservedConcurrentExecutions: 1000
+    reservedConcurrency: 1000
     environment:
       CPL_TMPDIR: /tmp
       CPL_VSIL_CURL_ALLOWED_EXTENSIONS: .tif
@@ -238,10 +238,10 @@ resources:
       Value:
         "Ref": WatchbotTopic
       Export:
-        Name: WatchbotTopic
+        Name: ${self:service}-${self:provider.stage}-WatchbotTopic
 
     WatchbotDLQTopic:
       Value:
         "Ref": WatchbotDLQTopic
       Export:
-        Name: WatchbotDLQTopic
+        Name: ${self:service}-${self:provider.stage}-WatchbotDLQTopic
